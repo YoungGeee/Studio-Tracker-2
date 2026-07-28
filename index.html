@@ -112,15 +112,15 @@
   .client-name-input:focus{outline:none;border-bottom-color:var(--gold);}
   .client-name-input::placeholder{color:var(--muted);font-weight:400;}
 
-  .fixed-toggle{
+  .fixed-toggle, .settled-toggle{
     display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;
     background:#0F0D08;border:1px solid var(--border);border-radius:999px;
     padding:6px 12px;font-size:12px;color:var(--muted);white-space:nowrap;
     transition:all .15s ease;
   }
-  .fixed-toggle:hover{border-color:var(--gold-dim-2);}
-  .fixed-toggle input{accent-color:var(--gold);width:14px;height:14px;cursor:pointer;}
-  .fixed-toggle.active{color:var(--gold);border-color:var(--gold-dim-2);background:var(--gold-dim);font-weight:700;}
+  .fixed-toggle:hover, .settled-toggle:hover{border-color:var(--gold-dim-2);}
+  .fixed-toggle input, .settled-toggle input{accent-color:var(--gold);width:14px;height:14px;cursor:pointer;}
+  .fixed-toggle.active, .settled-toggle.active{color:var(--gold);border-color:var(--gold-dim-2);background:var(--gold-dim);font-weight:700;}
 
   .video-badge{
     font-size:12px;color:var(--muted);background:#0F0D08;border:1px solid var(--border);
@@ -133,8 +133,8 @@
   .stat .stat-label{font-size:11px;color:var(--muted);}
   .stat .settled-input{
     background:#0F0D08;border:1px solid var(--border);color:var(--gold-2);
-    border-radius:8px;padding:7px 9px;font-size:13.5px;font-family:inherit;font-weight:700;
-    width:130px;text-align:center;direction:ltr;
+    border-radius:8px;padding:9px 10px;font-size:15.5px;font-family:inherit;font-weight:700;
+    width:160px;text-align:center;direction:ltr;
   }
   .stat .settled-input:focus{outline:none;border-color:var(--gold);}
   .stat .remaining-amt{color:var(--red);font-weight:800;font-variant-numeric:tabular-nums;font-size:14px;}
@@ -179,19 +179,20 @@
 
   input[type=text].proj-name, input[type=number]{
     background:#0F0D08;border:1px solid var(--border);color:var(--text);
-    border-radius:8px;padding:7px 9px;font-size:13.5px;font-family:inherit;
+    border-radius:8px;padding:9px 10px;font-size:15px;font-weight:600;font-family:inherit;
     width:100%;text-align:center;
   }
-  input[type=text].proj-name{text-align:right;}
-  input[type=number]{max-width:82px;}
+  input[type=text].proj-name{text-align:right;font-weight:500;}
+  input[type=number]{max-width:104px;}
   input:focus{outline:none;border-color:var(--gold);}
   .status-pill{
     display:inline-block;padding:4px 11px;border-radius:999px;font-weight:700;
     font-size:12px;background:#0F0D08;color:var(--text);min-width:48px;border:1px solid var(--border);
   }
   .status-pill.done{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-dim-2);}
-  .price-input{max-width:100px;}
-  .extra-input{max-width:100px;}
+  .price-input{max-width:124px;}
+  .extra-input{max-width:124px;}
+  .fixed-amount-input{width:160px;}
   .proj-computed-amt{color:var(--gold-2);font-weight:700;font-variant-numeric:tabular-nums;}
   .proj-order{display:flex;align-items:center;justify-content:center;gap:4px;}
   .proj-del-btn{
@@ -228,6 +229,7 @@
     .client-main{width:100%;order:1;}
     .client-drag{order:0;}
     .fixed-toggle{order:2;}
+    .settled-toggle{order:2;}
     .client-stats{width:100%;order:3;justify-content:space-between;gap:10px;padding-top:6px;border-top:1px dashed var(--border-soft);margin-top:2px;}
     .stat{min-width:auto;flex:1;}
     .stat .settled-input{width:100%;font-size:16px;}
@@ -322,13 +324,17 @@ function amountOfProject(pr){
 }
 
 function amountOfClient(c){
-  if(c.isFixed) return 0;
+  if(c.isFixed) return (c.fixedAmount || 0);
   return c.projects.reduce((sum, pr) => sum + amountOfProject(pr), 0);
 }
 
+function settledOfClient(c){
+  if(c.isFixed) return c.fixedSettled ? (c.fixedAmount || 0) : 0;
+  return (c.settledAmount || 0);
+}
+
 function remainingOfClient(c){
-  if(c.isFixed) return 0;
-  return amountOfClient(c) - (c.settledAmount || 0);
+  return amountOfClient(c) - settledOfClient(c);
 }
 
 function videoTotalsOfClient(c){
@@ -387,6 +393,8 @@ async function loadData(){
   clients.forEach(c => {
     if(c.isFixed === undefined) c.isFixed = false;
     if(c.settledAmount === undefined) c.settledAmount = 0;
+    if(c.fixedAmount === undefined) c.fixedAmount = 0;
+    if(c.fixedSettled === undefined) c.fixedSettled = false;
     if(c.expanded === undefined) c.expanded = false;
     if(!Array.isArray(c.projects)) c.projects = [];
     c.projects.forEach(pr => {
@@ -414,7 +422,7 @@ async function saveData(){
 
 function addClient(){
   clients.push({
-    id: uid('c'), name:'', isFixed:false, settledAmount:0, expanded:true, projects:[]
+    id: uid('c'), name:'', isFixed:false, settledAmount:0, fixedAmount:0, fixedSettled:false, expanded:true, projects:[]
   });
   render();
   saveData();
@@ -458,6 +466,14 @@ function toggleFixed(clientId, checked){
   saveData();
 }
 
+function toggleFixedSettled(clientId, checked){
+  const c = clients.find(c => c.id === clientId);
+  if(!c) return;
+  c.fixedSettled = checked;
+  render();
+  saveData();
+}
+
 function updateClientField(id, field, value){
   const c = clients.find(c => c.id === id);
   if(!c) return;
@@ -465,6 +481,8 @@ function updateClientField(id, field, value){
     c.name = value;
   }else if(field === 'settledAmount'){
     c.settledAmount = Math.max(0, Number(value)||0);
+  }else if(field === 'fixedAmount'){
+    c.fixedAmount = Math.max(0, Number(value)||0);
   }
   render();
   saveData();
@@ -536,7 +554,7 @@ function updateSummary(){
   let totalAmount = 0, totalSettled = 0, totalRemaining = 0, totalEdited = 0, totalUnedited = 0;
   clients.forEach(c => {
     totalAmount += amountOfClient(c);
-    totalSettled += (c.settledAmount || 0);
+    totalSettled += settledOfClient(c);
     totalRemaining += remainingOfClient(c);
     c.projects.forEach(pr => {
       totalEdited += (pr.editedVideos || 0);
@@ -605,7 +623,7 @@ function renderClients(){
   clients.forEach((c, idx) => {
     const amount = amountOfClient(c);
     const remaining = remainingOfClient(c);
-    const isSettled = !c.isFixed && amount > 0 && remaining <= 0;
+    const isSettled = amount > 0 && remaining <= 0;
     const vt = videoTotalsOfClient(c);
 
     const card = document.createElement('div');
@@ -614,9 +632,9 @@ function renderClients(){
     card.dataset.id = c.id;
 
     const statsHtml = c.isFixed
-      ? '<div class="stat"><span class="stat-label">دریافتی</span><input type="number" min="0" step="10000" class="settled-input" value="' + (c.settledAmount||0) + '" data-field="settledAmount"></div>' +
-        '<div class="stat"><span class="stat-label">باقی‌مانده</span><span class="dash">—</span></div>' +
-        '<div class="stat"><span class="stat-label">مبلغ خودکار</span><span class="dash">—</span></div>'
+      ? '<div class="stat"><span class="stat-label">مبلغ درآمد ثابت</span><input type="number" min="0" step="10000" class="settled-input" value="' + (c.fixedAmount||0) + '" data-field="fixedAmount"></div>' +
+        '<label class="settled-toggle' + (c.fixedSettled?' active':'') + '"><input type="checkbox" ' + (c.fixedSettled?'checked':'') + ' class="fixed-settled-checkbox"> تسویه‌شده</label>' +
+        '<div class="stat"><span class="stat-label">باقی‌مانده</span><span class="remaining-amt">' + fmtToman(remaining) + '</span></div>'
       : '<div class="stat"><span class="stat-label">تسویه‌شده</span><input type="number" min="0" step="10000" class="settled-input" value="' + (c.settledAmount||0) + '" data-field="settledAmount"></div>' +
         '<div class="stat"><span class="stat-label">باقی‌مانده</span><span class="remaining-amt">' + fmtToman(remaining) + '</span></div>' +
         '<div class="stat"><span class="stat-label">مبلغ خودکار</span><span class="computed-amt">' + fmtToman(amount) + '</span></div>';
@@ -650,7 +668,12 @@ function renderClients(){
 
     // wire up events
     card.querySelector('[data-field="name"]').addEventListener('change', (e) => updateClientField(c.id, 'name', e.target.value));
-    card.querySelector('[data-field="settledAmount"]').addEventListener('change', (e) => updateClientField(c.id, 'settledAmount', e.target.value));
+    if(c.isFixed){
+      card.querySelector('[data-field="fixedAmount"]').addEventListener('change', (e) => updateClientField(c.id, 'fixedAmount', e.target.value));
+      card.querySelector('.fixed-settled-checkbox').addEventListener('change', (e) => toggleFixedSettled(c.id, e.target.checked));
+    }else{
+      card.querySelector('[data-field="settledAmount"]').addEventListener('change', (e) => updateClientField(c.id, 'settledAmount', e.target.value));
+    }
     card.querySelector('.fixed-checkbox').addEventListener('change', (e) => toggleFixed(c.id, e.target.checked));
     card.querySelector('.del-btn').addEventListener('click', () => removeClient(c.id));
     card.querySelector('.expand-btn').addEventListener('click', () => toggleExpand(c.id));
