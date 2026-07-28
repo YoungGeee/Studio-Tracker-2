@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>استودیو آزاد | داشبورد کارفرماها</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0A0A0B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="استودیو آزاد">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0A0A0B;
+    --panel: #16140F;
+    --panel-2: #1D1A13;
+    --border: #332C1B;
+    --border-soft: #262117;
+    --text: #F3ECDA;
+    --muted: #9C9280;
+    --gold: #D4AF37;
+    --gold-2: #F0CD6C;
+    --gold-dim: rgba(212,175,55,0.14);
+    --gold-dim-2: rgba(212,175,55,0.26);
+    --red: #E5595E;
+    --red-dim: rgba(229,89,94,0.15);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background: radial-gradient(1200px 600px at 20% -10%, #1c1608 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:'Vazirmatn', Tahoma, "Segoe UI", Arial, sans-serif;
+    direction:rtl;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px;}
+  .header{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:24px;flex-wrap:wrap;gap:12px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand .dot{width:12px;height:12px;border-radius:50%;background:var(--gold);box-shadow:0 0 14px var(--gold);flex-shrink:0;}
+  .brand h1{font-size:20px;margin:0;font-weight:800;letter-spacing:.3px;}
+  .brand span{color:var(--muted);font-size:13px;}
+  .add-btn{
+    background:linear-gradient(135deg,var(--gold-2),var(--gold));
+    color:#1A1305;border:none;padding:11px 20px;border-radius:10px;
+    font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;
+    box-shadow:0 6px 20px rgba(212,175,55,.25);
+    transition:transform .15s ease, box-shadow .15s ease;
+    white-space:nowrap;
+  }
+  .add-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(212,175,55,.4);}
+  .add-btn:active{transform:translateY(0);}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:26px;}
+  @media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:480px){.cards{grid-template-columns:1fr;gap:10px;}}
+  .card{
+    background:linear-gradient(160deg,var(--panel),var(--panel-2));
+    border:1px solid var(--border-soft);border-radius:14px;padding:18px 18px;
+    position:relative;overflow:hidden;
+  }
+  .card::before{
+    content:"";position:absolute;inset:0 0 auto 0;height:3px;
+    background:var(--accent,var(--gold));
+  }
+  .card .label{color:var(--muted);font-size:12.5px;margin-bottom:8px;}
+  .card .value{font-size:21px;font-weight:800;color:var(--accent,var(--gold));direction:ltr;text-align:right;unicode-bidi:plaintext;}
+  .card.red{--accent:var(--red);}
+
+  .clients-panel{display:flex;flex-direction:column;gap:14px;}
+
+  .client-card{
+    background:linear-gradient(160deg,var(--panel),var(--panel-2));
+    border:1px solid var(--border);border-radius:16px;overflow:hidden;
+    transition:border-color .15s ease;
+  }
+  .client-card.settled{border-color:var(--gold-dim-2);}
+  .client-card.dragging{opacity:.35;}
+  .client-card.drag-over-top{box-shadow:inset 0 3px 0 0 var(--gold);}
+  .client-card.drag-over-bottom{box-shadow:inset 0 -3px 0 0 var(--gold);}
+
+  .client-header{
+    display:flex;align-items:center;gap:14px;padding:14px 16px;flex-wrap:wrap;
+  }
+  .client-drag{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .drag-handle{cursor:grab;color:var(--muted);font-size:18px;user-select:none;padding:4px;line-height:1;touch-action:none;}
+  .drag-handle:active{cursor:grabbing;}
+  .reorder-btns{display:flex;flex-direction:column;gap:2px;}
+  .reorder-btns button{
+    background:transparent;border:1px solid var(--border);color:var(--text);
+    border-radius:5px;width:20px;height:16px;font-size:9px;cursor:pointer;font-family:inherit;
+    line-height:1;padding:0;display:flex;align-items:center;justify-content:center;
+    transition:all .15s ease;
+  }
+  .reorder-btns button:hover{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+  .reorder-btns button:disabled{opacity:.25;cursor:default;}
+
+  .client-main{display:flex;align-items:center;gap:10px;flex:1 1 220px;min-width:180px;flex-wrap:wrap;}
+  .client-name-input{
+    background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);
+    font-size:16px;font-weight:700;font-family:inherit;padding:6px 4px;min-width:120px;flex:1;
+    text-align:right;
+  }
+  .client-name-input:hover{border-bottom-color:var(--border);}
+  .client-name-input:focus{outline:none;border-bottom-color:var(--gold);}
+  .client-name-input::placeholder{color:var(--muted);font-weight:400;}
+
+  .fixed-toggle{
+    display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;
+    background:#0F0D08;border:1px solid var(--border);border-radius:999px;
+    padding:6px 12px;font-size:12px;color:var(--muted);white-space:nowrap;
+    transition:all .15s ease;
+  }
+  .fixed-toggle:hover{border-color:var(--gold-dim-2);}
+  .fixed-toggle input{accent-color:var(--gold);width:14px;height:14px;cursor:pointer;}
+  .fixed-toggle.active{color:var(--gold);border-color:var(--gold-dim-2);background:var(--gold-dim);font-weight:700;}
+
+  .video-badge{
+    font-size:12px;color:var(--muted);background:#0F0D08;border:1px solid var(--border);
+    border-radius:999px;padding:6px 12px;white-space:nowrap;font-variant-numeric:tabular-nums;
+  }
+  .video-badge b{color:var(--gold);font-weight:700;}
+
+  .client-stats{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+  .stat{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:96px;}
+  .stat .stat-label{font-size:11px;color:var(--muted);}
+  .stat .settled-input{
+    background:#0F0D08;border:1px solid var(--border);color:var(--gold-2);
+    border-radius:8px;padding:7px 9px;font-size:13.5px;font-family:inherit;font-weight:700;
+    width:130px;text-align:center;direction:ltr;
+  }
+  .stat .settled-input:focus{outline:none;border-color:var(--gold);}
+  .stat .remaining-amt{color:var(--red);font-weight:800;font-variant-numeric:tabular-nums;font-size:14px;}
+  .client-card.settled .stat .remaining-amt{color:var(--gold);}
+  .stat .computed-amt{color:var(--gold-2);font-weight:800;font-variant-numeric:tabular-nums;font-size:14px;}
+  .stat .dash{color:var(--muted);font-weight:700;font-size:14px;}
+
+  .client-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-inline-start:auto;}
+  .expand-btn{
+    background:transparent;border:1px solid var(--border);color:var(--gold);
+    border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:13px;
+    transition:all .15s ease;display:flex;align-items:center;justify-content:center;
+  }
+  .expand-btn:hover{background:var(--gold-dim);border-color:var(--gold);}
+  .expand-btn.open{transform:rotate(180deg);}
+  .del-btn{
+    background:transparent;border:1px solid var(--border);color:var(--red);
+    border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:15px;font-family:inherit;
+    line-height:1;transition:all .15s ease;display:flex;align-items:center;justify-content:center;
+  }
+  .del-btn:hover{background:var(--red-dim);border-color:var(--red);}
+
+  .client-body{border-top:1px solid var(--border-soft);padding:14px 16px 16px;display:none;}
+  .client-body.open{display:block;}
+  .client-body .add-project-btn{
+    background:transparent;border:1px dashed var(--border);color:var(--gold);
+    border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+    width:100%;margin-top:10px;transition:all .15s ease;
+  }
+  .client-body .add-project-btn:hover{border-color:var(--gold);background:var(--gold-dim);}
+
+  .projects-table{width:100%;border-collapse:collapse;}
+  .projects-table thead th{
+    color:var(--muted);font-size:11.5px;font-weight:700;
+    text-align:center;padding:8px 8px;border-bottom:1px solid var(--border-soft);
+  }
+  .projects-table tbody tr{border-bottom:1px solid var(--border-soft);}
+  .projects-table tbody tr:last-child{border-bottom:none;}
+  .projects-table td{padding:8px;text-align:center;font-size:13px;vertical-align:middle;}
+  .projects-table td.name-cell{text-align:right;}
+  .no-projects{padding:22px 10px;text-align:center;color:var(--muted);font-size:13px;}
+
+  input[type=text].proj-name, input[type=number]{
+    background:#0F0D08;border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:7px 9px;font-size:13.5px;font-family:inherit;
+    width:100%;text-align:center;
+  }
+  input[type=text].proj-name{text-align:right;}
+  input[type=number]{max-width:82px;}
+  input:focus{outline:none;border-color:var(--gold);}
+  .status-pill{
+    display:inline-block;padding:4px 11px;border-radius:999px;font-weight:700;
+    font-size:12px;background:#0F0D08;color:var(--text);min-width:48px;border:1px solid var(--border);
+  }
+  .status-pill.done{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-dim-2);}
+  .price-input{max-width:100px;}
+  .extra-input{max-width:100px;}
+  .proj-computed-amt{color:var(--gold-2);font-weight:700;font-variant-numeric:tabular-nums;}
+  .proj-order{display:flex;align-items:center;justify-content:center;gap:4px;}
+  .proj-del-btn{
+    background:transparent;border:1px solid var(--border);color:var(--red);
+    border-radius:7px;width:26px;height:26px;cursor:pointer;font-size:13px;font-family:inherit;
+    line-height:1;transition:all .15s ease;
+  }
+  .proj-del-btn:hover{background:var(--red-dim);border-color:var(--red);}
+
+  .empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px;}
+  .footer-note{
+    color:var(--muted);font-size:12px;text-align:center;margin-top:18px;
+    line-height:1.8;
+  }
+  .save-indicator{
+    position:fixed;bottom:18px;left:18px;background:var(--panel-2);
+    border:1px solid var(--gold-dim-2);color:var(--gold-2);font-size:12px;
+    padding:8px 14px;border-radius:999px;opacity:0;transition:opacity .3s ease;
+    pointer-events:none;font-weight:700;
+  }
+  .save-indicator.show{opacity:1;}
+
+  /* ---------- Mobile ---------- */
+  @media(max-width:760px){
+    .wrap{padding:18px 12px 50px;}
+    .header{margin-bottom:18px;}
+    .brand h1{font-size:17px;}
+    .brand span{font-size:11.5px;}
+    .add-btn{padding:10px 16px;font-size:13px;width:100%;}
+    .card{padding:14px 16px;}
+    .card .value{font-size:18px;}
+
+    .client-header{padding:12px;}
+    .client-main{width:100%;order:1;}
+    .client-drag{order:0;}
+    .fixed-toggle{order:2;}
+    .client-stats{width:100%;order:3;justify-content:space-between;gap:10px;padding-top:6px;border-top:1px dashed var(--border-soft);margin-top:2px;}
+    .stat{min-width:auto;flex:1;}
+    .stat .settled-input{width:100%;font-size:16px;}
+    .client-actions{order:4;width:100%;justify-content:flex-end;padding-top:4px;}
+    .video-badge{order:1;}
+
+    .projects-table, .projects-table tbody{display:block;width:100%;}
+    .projects-table thead{display:none;}
+    .projects-table tbody tr{
+      display:grid;grid-template-columns:1fr 1fr;gap:0 10px;
+      background:#100E09;border:1px solid var(--border-soft);border-radius:12px;
+      padding:10px 12px;margin-bottom:10px;
+    }
+    .projects-table tbody tr:last-child{margin-bottom:0;}
+    .projects-table td{
+      display:flex;flex-direction:column;align-items:flex-start;gap:5px;
+      padding:8px 2px;text-align:right;border-bottom:1px dashed rgba(212,175,55,0.08);
+    }
+    .projects-table td.name-cell{grid-column:1/-1;text-align:right;}
+    .projects-table td::before{content:attr(data-label);font-size:10.5px;color:var(--muted);font-weight:700;}
+    .projects-table td input[type=text], .projects-table td input[type=number]{max-width:100%;text-align:right;font-size:16px;padding:9px 10px;}
+    .proj-order{grid-column:1/-1;flex-direction:row;justify-content:flex-start;border-bottom:1px solid var(--border-soft);padding-bottom:10px;margin-bottom:2px;}
+    .proj-del-cell{grid-column:1/-1;border-bottom:none;padding-top:2px;}
+    .proj-del-cell::before{display:none;}
+    .proj-del-btn{width:100%;height:34px;border-radius:8px;font-size:13px;}
+    .proj-del-btn::after{content:" حذف پروژه";font-size:12px;vertical-align:middle;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <h1>استودیو آزاد</h1>
+        <span>داشبورد کارفرماها و پروژه‌ها</span>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addClient()">+ افزودن کارفرما</button>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="label">جمع کل مبلغ محاسبه‌شده</div>
+      <div class="value" id="totalAmount">0 تومان</div>
+    </div>
+    <div class="card">
+      <div class="label">جمع کل تسویه‌شده</div>
+      <div class="value" id="totalSettled">0 تومان</div>
+    </div>
+    <div class="card red">
+      <div class="label">باقی‌مانده تسویه‌نشده</div>
+      <div class="value" id="totalRemaining">0 تومان</div>
+    </div>
+    <div class="card">
+      <div class="label">جمع ویدیوهای ادیت‌شده</div>
+      <div class="value" id="totalEdited">0</div>
+    </div>
+    <div class="card red">
+      <div class="label">جمع ویدیوهای ادیت‌نشده</div>
+      <div class="value" id="totalUnedited">0</div>
+    </div>
+  </div>
+
+  <div class="clients-panel">
+    <div id="clientsList"></div>
+    <div class="empty" id="emptyMsg" style="display:none;">هنوز کارفرمایی اضافه نکردی. روی «افزودن کارفرما» بزن.</div>
+  </div>
+
+  <div class="footer-note">اطلاعات به‌صورت خودکار ذخیره می‌شود و فقط برای شما قابل مشاهده است. روی هر کارفرما بزن تا پروژه‌هاش باز بشه. برای کارفرماهایی که «درآمد ثابت» دارن، سیستم قیمت‌گذاری و ضرب خودکار حذف می‌شه و فقط تعداد ویدیو و ویدیوهای ادیت‌شده ثبت می‌شه.</div>
+</div>
+
+<div class="save-indicator" id="saveIndicator">ذخیره شد ✓</div>
+
+<script>
+const STORAGE_KEY = 'studio-azad-clients-v1';
+const OLD_STORAGE_KEY = 'studio-azad-projects-v1';
+let clients = [];
+let saveTimer = null;
+
+function uid(prefix){ return (prefix||'c') + Date.now() + Math.random().toString(36).slice(2,7); }
+
+function fmtToman(n){
+  n = Math.round(n || 0);
+  return n.toLocaleString('en-US') + ' تومان';
+}
+
+function amountOfProject(pr){
+  return (pr.pricePerVideo || 0) * (pr.totalVideos || 0) + (pr.extraAmount || 0);
+}
+
+function amountOfClient(c){
+  if(c.isFixed) return 0;
+  return c.projects.reduce((sum, pr) => sum + amountOfProject(pr), 0);
+}
+
+function remainingOfClient(c){
+  if(c.isFixed) return 0;
+  return amountOfClient(c) - (c.settledAmount || 0);
+}
+
+function videoTotalsOfClient(c){
+  let total = 0, edited = 0;
+  c.projects.forEach(pr => { total += (pr.totalVideos||0); edited += (pr.editedVideos||0); });
+  return {total, edited};
+}
+
+async function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      clients = JSON.parse(raw);
+    }
+  }catch(e){
+    clients = [];
+  }
+
+  if(clients.length === 0){
+    // try migrating old flat-project data structure into a single client
+    try{
+      const oldRaw = localStorage.getItem(OLD_STORAGE_KEY);
+      if(oldRaw){
+        const oldProjects = JSON.parse(oldRaw);
+        if(Array.isArray(oldProjects) && oldProjects.length){
+          clients = [{
+            id: uid('c'),
+            name: 'پروژه‌های قبلی',
+            isFixed: false,
+            settledAmount: oldProjects.reduce((s,p)=> s + (p.settledAmount||0), 0),
+            expanded: true,
+            projects: oldProjects.map(p => ({
+              id: uid('p'),
+              name: p.name || '',
+              totalVideos: p.totalVideos || 0,
+              editedVideos: p.editedVideos || 0,
+              pricePerVideo: p.pricePerVideo || 0,
+              extraAmount: p.extraAmount || 0
+            }))
+          }];
+        }
+      }
+    }catch(e){ /* ignore migration errors */ }
+  }
+
+  if(clients.length === 0){
+    clients = [{
+      id: uid('c'), name: 'نمونه: نگین نصر صنعتی خراسان', isFixed:false, settledAmount: 5000000, expanded:true,
+      projects: [{
+        id: uid('p'), name:'تیزر افتتاحیه', totalVideos:10, editedVideos:10, pricePerVideo:500000, extraAmount:0
+      }]
+    }];
+  }
+
+  // migrate/normalize fields
+  clients.forEach(c => {
+    if(c.isFixed === undefined) c.isFixed = false;
+    if(c.settledAmount === undefined) c.settledAmount = 0;
+    if(c.expanded === undefined) c.expanded = false;
+    if(!Array.isArray(c.projects)) c.projects = [];
+    c.projects.forEach(pr => {
+      if(pr.pricePerVideo === undefined) pr.pricePerVideo = 0;
+      if(pr.extraAmount === undefined) pr.extraAmount = 0;
+      if(pr.totalVideos === undefined) pr.totalVideos = 0;
+      if(pr.editedVideos === undefined) pr.editedVideos = 0;
+    });
+  });
+
+  render();
+}
+
+async function saveData(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+    const ind = document.getElementById('saveIndicator');
+    ind.classList.add('show');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(()=> ind.classList.remove('show'), 1200);
+  }catch(e){
+    console.error('storage error', e);
+  }
+}
+
+function addClient(){
+  clients.push({
+    id: uid('c'), name:'', isFixed:false, settledAmount:0, expanded:true, projects:[]
+  });
+  render();
+  saveData();
+}
+
+function removeClient(id){
+  clients = clients.filter(c => c.id !== id);
+  render();
+  saveData();
+}
+
+function addProject(clientId){
+  const c = clients.find(c => c.id === clientId);
+  if(!c) return;
+  c.projects.push({id: uid('p'), name:'', totalVideos:0, editedVideos:0, pricePerVideo:0, extraAmount:0});
+  c.expanded = true;
+  render();
+  saveData();
+}
+
+function removeProject(clientId, projectId){
+  const c = clients.find(c => c.id === clientId);
+  if(!c) return;
+  c.projects = c.projects.filter(p => p.id !== projectId);
+  render();
+  saveData();
+}
+
+function toggleExpand(clientId){
+  const c = clients.find(c => c.id === clientId);
+  if(!c) return;
+  c.expanded = !c.expanded;
+  render();
+}
+
+function toggleFixed(clientId, checked){
+  const c = clients.find(c => c.id === clientId);
+  if(!c) return;
+  c.isFixed = checked;
+  render();
+  saveData();
+}
+
+function updateClientField(id, field, value){
+  const c = clients.find(c => c.id === id);
+  if(!c) return;
+  if(field === 'name'){
+    c.name = value;
+  }else if(field === 'settledAmount'){
+    c.settledAmount = Math.max(0, Number(value)||0);
+  }
+  render();
+  saveData();
+}
+
+function updateProjectField(clientId, projectId, field, value){
+  const c = clients.find(c => c.id === clientId);
+  if(!c) return;
+  const pr = c.projects.find(p => p.id === projectId);
+  if(!pr) return;
+  if(field === 'name'){
+    pr.name = value;
+  }else if(field === 'pricePerVideo'){
+    pr.pricePerVideo = Math.max(0, Number(value)||0);
+  }else if(field === 'extraAmount'){
+    pr.extraAmount = Math.max(0, Number(value)||0);
+  }else if(field === 'totalVideos'){
+    pr.totalVideos = Math.max(0, Number(value)||0);
+  }else if(field === 'editedVideos'){
+    pr.editedVideos = Math.max(0, Number(value)||0);
+  }
+  render();
+  saveData();
+}
+
+function moveClient(id, delta){
+  const from = clients.findIndex(c => c.id === id);
+  if(from === -1) return;
+  const to = from + delta;
+  if(to < 0 || to >= clients.length) return;
+  const [moved] = clients.splice(from, 1);
+  clients.splice(to, 0, moved);
+  render();
+  saveData();
+}
+
+function reorderClients(draggedId, targetId, insertBefore){
+  const from = clients.findIndex(c => c.id === draggedId);
+  if(from === -1) return;
+  const [moved] = clients.splice(from, 1);
+  let to = clients.findIndex(c => c.id === targetId);
+  if(to === -1){ to = clients.length; }
+  else if(!insertBefore){ to += 1; }
+  clients.splice(to, 0, moved);
+  render();
+  saveData();
+}
+
+function moveProject(clientId, id, delta){
+  const c = clients.find(c => c.id === clientId);
+  if(!c) return;
+  const from = c.projects.findIndex(p => p.id === id);
+  if(from === -1) return;
+  const to = from + delta;
+  if(to < 0 || to >= c.projects.length) return;
+  const [moved] = c.projects.splice(from, 1);
+  c.projects.splice(to, 0, moved);
+  render();
+  saveData();
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+function updateSummary(){
+  let totalAmount = 0, totalSettled = 0, totalRemaining = 0, totalEdited = 0, totalUnedited = 0;
+  clients.forEach(c => {
+    totalAmount += amountOfClient(c);
+    totalSettled += (c.settledAmount || 0);
+    totalRemaining += remainingOfClient(c);
+    c.projects.forEach(pr => {
+      totalEdited += (pr.editedVideos || 0);
+      totalUnedited += Math.max(0, (pr.totalVideos||0) - (pr.editedVideos||0));
+    });
+  });
+  document.getElementById('totalAmount').textContent = fmtToman(totalAmount);
+  document.getElementById('totalSettled').textContent = fmtToman(totalSettled);
+  document.getElementById('totalRemaining').textContent = fmtToman(totalRemaining);
+  document.getElementById('totalEdited').textContent = totalEdited.toLocaleString('en-US');
+  document.getElementById('totalUnedited').textContent = totalUnedited.toLocaleString('en-US');
+}
+
+function render(){
+  renderClients();
+  updateSummary();
+}
+
+function renderProjectsTable(c){
+  if(c.projects.length === 0){
+    return '<div class="no-projects">هنوز پروژه‌ای برای این کارفرما اضافه نشده.</div>';
+  }
+
+  const headCols = c.isFixed
+    ? '<th style="width:50px;"></th><th style="width:22%;">نام پروژه</th><th>تعداد ویدیو</th><th>تعداد ادیت‌شده</th><th>وضعیت</th><th style="width:36px;"></th>'
+    : '<th style="width:50px;"></th><th style="width:18%;">نام پروژه</th><th>تعداد ویدیو</th><th>تعداد ادیت‌شده</th><th>وضعیت</th><th>قیمت هر ویدیو</th><th>مبلغ اضافه</th><th>مبلغ کل (خودکار)</th><th style="width:36px;"></th>';
+
+  const rows = c.projects.map((pr, idx) => {
+    const isDone = pr.totalVideos > 0 && pr.editedVideos === pr.totalVideos;
+    const pillHtml = '<span class="status-pill ' + (isDone?'done':'') + '">' + (pr.totalVideos ? (pr.editedVideos + '/' + pr.totalVideos) : '—') + '</span>';
+
+    const orderCell = '<td class="proj-order" data-label="">' +
+      '<div class="reorder-btns">' +
+        '<button type="button" onclick="moveProject(\'' + c.id + '\',\'' + pr.id + '\',-1)" ' + (idx===0?'disabled':'') + '>▲</button>' +
+        '<button type="button" onclick="moveProject(\'' + c.id + '\',\'' + pr.id + '\',1)" ' + (idx===c.projects.length-1?'disabled':'') + '>▼</button>' +
+      '</div></td>';
+
+    const nameCell = '<td class="name-cell" data-label="نام پروژه"><input type="text" class="proj-name" value="' + escapeHtml(pr.name) + '" placeholder="نام پروژه" onchange="updateProjectField(\'' + c.id + '\',\'' + pr.id + '\',\'name\',this.value)"></td>';
+
+    const totalCell = '<td data-label="تعداد ویدیو"><input type="number" min="0" value="' + pr.totalVideos + '" onchange="updateProjectField(\'' + c.id + '\',\'' + pr.id + '\',\'totalVideos\',this.value)"></td>';
+    const editedCell = '<td data-label="تعداد ادیت‌شده"><input type="number" min="0" value="' + pr.editedVideos + '" onchange="updateProjectField(\'' + c.id + '\',\'' + pr.id + '\',\'editedVideos\',this.value)"></td>';
+    const statusCell = '<td data-label="وضعیت">' + pillHtml + '</td>';
+    const delCell = '<td class="proj-del-cell" data-label=""><button class="proj-del-btn" onclick="removeProject(\'' + c.id + '\',\'' + pr.id + '\')">×</button></td>';
+
+    if(c.isFixed){
+      return '<tr>' + orderCell + nameCell + totalCell + editedCell + statusCell + delCell + '</tr>';
+    }
+
+    const amount = amountOfProject(pr);
+    const priceCell = '<td data-label="قیمت هر ویدیو"><input type="number" min="0" step="10000" class="price-input" value="' + pr.pricePerVideo + '" onchange="updateProjectField(\'' + c.id + '\',\'' + pr.id + '\',\'pricePerVideo\',this.value)"></td>';
+    const extraCell = '<td data-label="مبلغ اضافه"><input type="number" min="0" step="10000" class="extra-input" value="' + pr.extraAmount + '" onchange="updateProjectField(\'' + c.id + '\',\'' + pr.id + '\',\'extraAmount\',this.value)"></td>';
+    const amountCell = '<td class="proj-computed-amt" data-label="مبلغ کل">' + fmtToman(amount) + '</td>';
+
+    return '<tr>' + orderCell + nameCell + totalCell + editedCell + statusCell + priceCell + extraCell + amountCell + delCell + '</tr>';
+  }).join('');
+
+  return '<table class="projects-table"><thead><tr>' + headCols + '</tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+function renderClients(){
+  const list = document.getElementById('clientsList');
+  const emptyMsg = document.getElementById('emptyMsg');
+  list.innerHTML = '';
+  emptyMsg.style.display = clients.length === 0 ? 'block' : 'none';
+
+  clients.forEach((c, idx) => {
+    const amount = amountOfClient(c);
+    const remaining = remainingOfClient(c);
+    const isSettled = !c.isFixed && amount > 0 && remaining <= 0;
+    const vt = videoTotalsOfClient(c);
+
+    const card = document.createElement('div');
+    card.className = 'client-card' + (isSettled ? ' settled' : '');
+    card.draggable = true;
+    card.dataset.id = c.id;
+
+    const statsHtml = c.isFixed
+      ? '<div class="stat"><span class="stat-label">دریافتی</span><input type="number" min="0" step="10000" class="settled-input" value="' + (c.settledAmount||0) + '" data-field="settledAmount"></div>' +
+        '<div class="stat"><span class="stat-label">باقی‌مانده</span><span class="dash">—</span></div>' +
+        '<div class="stat"><span class="stat-label">مبلغ خودکار</span><span class="dash">—</span></div>'
+      : '<div class="stat"><span class="stat-label">تسویه‌شده</span><input type="number" min="0" step="10000" class="settled-input" value="' + (c.settledAmount||0) + '" data-field="settledAmount"></div>' +
+        '<div class="stat"><span class="stat-label">باقی‌مانده</span><span class="remaining-amt">' + fmtToman(remaining) + '</span></div>' +
+        '<div class="stat"><span class="stat-label">مبلغ خودکار</span><span class="computed-amt">' + fmtToman(amount) + '</span></div>';
+
+    card.innerHTML =
+      '<div class="client-header">' +
+        '<div class="client-drag">' +
+          '<span class="drag-handle" title="بکش و جابه‌جا کن">⠿</span>' +
+          '<div class="reorder-btns">' +
+            '<button type="button" class="move-up" title="بالاتر" ' + (idx===0?'disabled':'') + '>▲</button>' +
+            '<button type="button" class="move-down" title="پایین‌تر" ' + (idx===clients.length-1?'disabled':'') + '>▼</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="client-main">' +
+          '<input type="text" class="client-name-input" value="' + escapeHtml(c.name) + '" placeholder="نام کارفرما / برند" data-field="name">' +
+        '</div>' +
+        '<label class="fixed-toggle' + (c.isFixed?' active':'') + '">' +
+          '<input type="checkbox" ' + (c.isFixed?'checked':'') + ' class="fixed-checkbox"> درآمد ثابت' +
+        '</label>' +
+        '<span class="video-badge"><b>' + vt.edited + '</b>/' + vt.total + ' ویدیو ادیت‌شده</span>' +
+        '<div class="client-stats">' + statsHtml + '</div>' +
+        '<div class="client-actions">' +
+          '<button class="expand-btn' + (c.expanded?' open':'') + '" title="نمایش پروژه‌ها">▾</button>' +
+          '<button class="del-btn" title="حذف کارفرما">×</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="client-body' + (c.expanded?' open':'') + '">' +
+        renderProjectsTable(c) +
+        '<button type="button" class="add-project-btn">+ افزودن پروژه</button>' +
+      '</div>';
+
+    // wire up events
+    card.querySelector('[data-field="name"]').addEventListener('change', (e) => updateClientField(c.id, 'name', e.target.value));
+    card.querySelector('[data-field="settledAmount"]').addEventListener('change', (e) => updateClientField(c.id, 'settledAmount', e.target.value));
+    card.querySelector('.fixed-checkbox').addEventListener('change', (e) => toggleFixed(c.id, e.target.checked));
+    card.querySelector('.del-btn').addEventListener('click', () => removeClient(c.id));
+    card.querySelector('.expand-btn').addEventListener('click', () => toggleExpand(c.id));
+    card.querySelector('.add-project-btn').addEventListener('click', () => addProject(c.id));
+    card.querySelector('.move-up').addEventListener('click', () => moveClient(c.id, -1));
+    card.querySelector('.move-down').addEventListener('click', () => moveClient(c.id, 1));
+
+    card.addEventListener('dragstart', () => { card.classList.add('dragging'); });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      list.querySelectorAll('.client-card').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
+    });
+    card.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const dragging = list.querySelector('.client-card.dragging');
+      if(!dragging || dragging === card) return;
+      const rect = card.getBoundingClientRect();
+      const before = (e.clientY - rect.top) < rect.height / 2;
+      list.querySelectorAll('.client-card').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
+      card.classList.add(before ? 'drag-over-top' : 'drag-over-bottom');
+    });
+    card.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const draggingCard = list.querySelector('.client-card.dragging');
+      if(!draggingCard || draggingCard === card) return;
+      reorderClients(draggingCard.dataset.id, card.dataset.id, card.classList.contains('drag-over-top'));
+    });
+
+    list.appendChild(card);
+  });
+}
+
+loadData();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  });
+}
+</script>
+
+</body></html>
